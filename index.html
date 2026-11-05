@@ -10,18 +10,274 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="0 euro">
 <style>
-  :root { --shift: 96px; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #4a90d9; }
-  iframe {
-    position: absolute; left: 0; width: 100%; border: 0;
-    top: calc(env(safe-area-inset-top) - var(--shift));
-    height: calc(100% - env(safe-area-inset-top) + var(--shift));
-  }
-  .cover { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top); background: #4a90d9; z-index: 2; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Roboto, Arial, sans-serif; background: #f2f2f2; color: #222; }
+  header { position: sticky; top: 0; z-index: 5; background: #4a90d9; color: #fff; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; }
+  header h1 { margin: 0 0 8px; font-size: 18px; font-weight: 500; }
+  .filters { display: flex; gap: 8px; }
+  .filters input, .filters select { flex: 1; min-width: 0; padding: 8px; border: 0; border-radius: 6px; font-size: 16px; }
+
+  #list { padding-bottom: 80px; }
+  .page { margin: 0; padding: 8px 12px; background: #e4e4e4; font-size: 18px; }
+  .row { display: flex; gap: 10px; padding: 10px 12px; background: #fff; border-bottom: 1px solid #ddd; cursor: pointer; }
+  .num { width: 30px; flex: none; align-self: center; text-align: center; font-size: 13px; color: #888; }
+  .row img { width: 80px; height: 40px; object-fit: contain; background: #fafafa; flex: none; align-self: center; }
+  .row .t { font-weight: 600; font-size: 14px; }
+  .row .s { font-size: 13px; color: #555; margin-top: 3px; }
+  .empty { padding: 30px; text-align: center; color: #777; }
+
+  #detail { display: none; position: fixed; inset: 0; z-index: 10; background: #fff; overflow-y: auto; }
+  #detail .bar { position: sticky; top: 0; background: #4a90d9; color: #fff; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; display: flex; align-items: center; gap: 12px; }
+  #detail .bar button { background: none; border: 0; color: #fff; font-size: 22px; }
+  #detail img.big { width: 100%; display: block; cursor: zoom-in; }
+  #detail .body { padding: 12px 16px 40px; }
+  .lbl { font-size: 12px; color: #777; margin-top: 14px; }
+  .val { font-size: 17px; }
+  .val a { color: #1a5fb4; word-break: break-all; }
+  .map { width: 100%; height: 260px; border: 0; border-radius: 8px; margin-top: 6px; }
+
+  #viewer { display: none; position: fixed; inset: 0; z-index: 30; background: #000; overflow: hidden; touch-action: none; }
+  #viewer img { display: block; width: 100%; height: 100%; object-fit: contain; transform-origin: center center; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; will-change: transform; }
+  #vclose { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 14px; z-index: 31; width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(0,0,0,.5); color: #fff; font-size: 22px; }
+
+  .fab { position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 6; width: 48px; height: 48px; border-radius: 50%; border: 0; background: #4a90d9; color: #fff; font-size: 22px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
 </style>
 </head>
 <body>
-<div class="cover"></div>
-<iframe src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
+
+<header>
+  <h1>0 euro collection</h1>
+  <div class="filters">
+    <input id="q" type="search" placeholder="Поиск">
+    <select id="country"><option value="">Все страны</option></select>
+  </div>
+</header>
+
+<div id="list"><div class="empty">Загрузка…</div></div>
+
+<div id="detail">
+  <div class="bar"><button id="back">←</button><span>Details</span></div>
+  <div id="dcontent"></div>
+</div>
+
+<div id="viewer"><button id="vclose">✕</button><img id="vimg" referrerpolicy="no-referrer"></div>
+
+<button id="refresh" class="fab">↻</button>
+
+<script>
+const API = 'https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec';
+const $ = id => document.getElementById(id);
+
+let ITEMS = [], histPushed = false;
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g,
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function title(it) {
+  const p = it.Prefix && it.Prefix !== '-' ? it.Prefix + ' · ' : '';
+  return p + it.Year + ' · ' + it.Name;
+}
+
+function field(label, value) {
+  return '<div class="lbl">' + esc(label) + '</div><div class="val">' + value + '</div>';
+}
+
+function fillCountries() {
+  const sel = $('country');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Все страны</option>';
+  [...new Set(ITEMS.map(i => i.Country))].filter(Boolean).sort().forEach(c => {
+    const o = document.createElement('option');
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+  sel.value = cur;
+}
+
+function setItems(items) {
+  ITEMS = items;
+  ITEMS.forEach((it, i) => it.n = i + 1);
+  fillCountries();
+  render();
+}
+
+function render() {
+  const q = $('q').value.trim().toLowerCase();
+  const c = $('country').value;
+  const list = ITEMS.filter(it =>
+    (!c || it.Country === c) &&
+    (!q || (title(it) + ' ' + it.Country).toLowerCase().includes(q)));
+
+  if (!list.length) {
+    $('list').innerHTML = '<div class="empty">Ничего не найдено</div>';
+    return;
+  }
+
+  let html = '', page = null;
+  list.forEach(it => {
+    if (it.Page !== page) {
+      page = it.Page;
+      html += '<h2 class="page">' + esc(page) + '</h2>';
+    }
+    html += '<div class="row" data-id="' + esc(it._row) + '">' +
+      '<div class="num">' + it.n + '</div>' +
+      '<img loading="lazy" referrerpolicy="no-referrer" src="' + esc(it.Picture) + '">' +
+      '<div><div class="t">' + esc(it.Name) + '</div>' +
+      '<div class="s">' + esc(it.Country + ' · ' + it.Year) + ' &nbsp; ' + esc(it.Prefix) + '</div></div></div>';
+  });
+  $('list').innerHTML = html;
+}
+
+function showDetail() {
+  $('detail').style.display = 'block';
+  $('detail').scrollTop = 0;
+  try { history.pushState({ d: 1 }, ''); histPushed = true; }
+  catch (e) { histPushed = false; }
+}
+
+function closeDetail(fromPop) {
+  if ($('detail').style.display !== 'block') return;
+  $('detail').style.display = 'none';
+  $('viewer').style.display = 'none';
+  const hadEntry = histPushed;
+  histPushed = false;
+  if (hadEntry && !fromPop) {
+    try { history.back(); } catch (e) {}
+  }
+}
+
+function openDetail(row) {
+  const it = ITEMS.find(x => String(x._row) === String(row));
+  if (!it) return;
+
+  let h = '<img class="big" referrerpolicy="no-referrer" src="' + esc(it.Picture) + '">' +
+    '<div class="body">' +
+    field('Title', esc(title(it))) +
+    field('Page · Place', esc(it.Page + ' · ' + it.Place)) +
+    field('Country', esc(it.Country)) +
+    field('Authenticity', esc(it.Aut)) +
+    field('QTY', esc(it.QTY));
+
+  if (it.Link) h += field('Link', '<a href="' + esc(it.Link) + '" target="_blank" rel="noopener">' + esc(it.Link) + '</a>');
+  if (it.Map) h += field('Map',
+    '<iframe class="map" loading="lazy" src="https://maps.google.com/maps?q=' +
+    encodeURIComponent(it.Map) + '&output=embed"></iframe>');
+  h += '</div>';
+
+  $('dcontent').innerHTML = h;
+  showDetail();
+}
+
+const V = { s: 1, x: 0, y: 0, d0: 0, s0: 1, lx: 0, ly: 0, lastTap: 0, moved: false };
+
+function applyV() {
+  $('vimg').style.transform = 'translate(' + V.x + 'px,' + V.y + 'px) scale(' + V.s + ')';
+}
+
+function clampV() {
+  const mx = (V.s - 1) * $('viewer').clientWidth / 2;
+  const my = (V.s - 1) * $('viewer').clientHeight / 2;
+  V.x = Math.max(-mx, Math.min(mx, V.x));
+  V.y = Math.max(-my, Math.min(my, V.y));
+}
+
+function openViewer(src) {
+  V.s = 1; V.x = 0; V.y = 0;
+  applyV();
+  $('vimg').src = src.replace(/sz=w\d+/, 'sz=w1200');
+  $('viewer').style.display = 'block';
+}
+
+function dist(t) {
+  return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+}
+
+$('viewer').addEventListener('touchstart', e => {
+  V.moved = false;
+  if (e.touches.length === 2) {
+    V.d0 = dist(e.touches); V.s0 = V.s;
+  } else if (e.touches.length === 1) {
+    V.lx = e.touches[0].clientX; V.ly = e.touches[0].clientY;
+  }
+}, { passive: true });
+
+$('viewer').addEventListener('touchmove', e => {
+  e.preventDefault();
+  V.moved = true;
+  if (e.touches.length === 2) {
+    V.s = Math.max(1, Math.min(5, V.s0 * dist(e.touches) / V.d0));
+  } else if (e.touches.length === 1 && V.s > 1) {
+    V.x += e.touches[0].clientX - V.lx;
+    V.y += e.touches[0].clientY - V.ly;
+    V.lx = e.touches[0].clientX; V.ly = e.touches[0].clientY;
+  }
+  clampV();
+  applyV();
+}, { passive: false });
+
+$('viewer').addEventListener('touchend', e => {
+  if (e.touches.length > 0) return;
+  if (V.s < 1.05) { V.s = 1; V.x = 0; V.y = 0; applyV(); }
+  if (!V.moved) {
+    const now = Date.now();
+    if (now - V.lastTap < 300) {
+      V.s = V.s > 1 ? 1 : 2.5;
+      V.x = 0; V.y = 0;
+      clampV(); applyV();
+      V.lastTap = 0;
+    } else {
+      V.lastTap = now;
+    }
+  }
+}, { passive: true });
+
+function loadItems() {
+  $('refresh').disabled = true;
+  fetch(API, { cache: 'no-store' })
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(items => { setItems(items); $('refresh').disabled = false; })
+    .catch(err => {
+      $('refresh').disabled = false;
+      if (ITEMS.length) alert(err.message);
+      else $('list').innerHTML = '<div class="empty">Ошибка: ' + esc(err.message) + '</div>';
+    });
+}
+
+$('list').addEventListener('click', e => {
+  const r = e.target.closest('.row');
+  if (r) openDetail(r.dataset.id);
+});
+
+$('dcontent').addEventListener('click', e => {
+  if (e.target.classList.contains('big')) openViewer(e.target.src);
+});
+
+$('vclose').addEventListener('click', () => $('viewer').style.display = 'none');
+$('back').addEventListener('click', () => closeDetail(false));
+window.addEventListener('popstate', () => closeDetail(true));
+
+let sx = 0, sy = 0, st = 0;
+$('detail').addEventListener('touchstart', e => {
+  const t = e.changedTouches[0];
+  sx = t.clientX; sy = t.clientY; st = Date.now();
+}, { passive: true });
+$('detail').addEventListener('touchend', e => {
+  const t = e.changedTouches[0];
+  const dx = t.clientX - sx;
+  const dy = Math.abs(t.clientY - sy);
+  if (dx > 80 && dy < 60 && Date.now() - st < 600) closeDetail(false);
+}, { passive: true });
+
+$('q').addEventListener('input', render);
+$('country').addEventListener('change', render);
+$('refresh').addEventListener('click', loadItems);
+
+loadItems();
+</script>
 </body>
 </html>
