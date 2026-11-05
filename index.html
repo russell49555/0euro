@@ -17,7 +17,28 @@
 </style>
 </head>
 <body>
-<div class="cover"></div>
+<div class="cover" id="cover"></div>
 <iframe src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
+<script>
+function resetTint() {
+  var old = document.getElementById('cover');
+  if (old) old.remove();
+  setTimeout(function () {
+    var c = document.createElement('div');
+    c.className = 'cover';
+    c.id = 'cover';
+    document.body.insertBefore(c, document.body.firstChild);
+  }, 120);
+}
+window.addEventListener('load', function () {
+  setTimeout(resetTint, 300);
+  setTimeout(resetTint, 1500);
+  setTimeout(resetTint, 4000);
+});
+window.addEventListener('pageshow', function () { setTimeout(resetTint, 300); });
+document.addEventListener('visibilitychange', function () {
+  if (!document.hidden) setTimeout(resetTint, 300);
+});
+</script>
 </body>
 </html>
