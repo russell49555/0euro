@@ -6,39 +6,49 @@
 <title>0 euro</title>
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="0 euro">
+<meta name="theme-color" content="#4a90d9">
 <style>
-  :root { --top: max(env(safe-area-inset-top), 8px); }
-  html { margin: 0; height: 100%; background-color: #4a90d9; overscroll-behavior: none; }
-  body { margin: 0; height: 100%; position: relative; background-color: #4a90d9; overscroll-behavior: none; }
-  .cover { position: fixed; top: 0; left: 0; right: 0; height: var(--top); background-color: #4a90d9; z-index: 2; }
-  iframe { position: absolute; top: var(--top); left: 0; width: 100%; height: calc(100% - var(--top)); border: 0; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #4a90d9;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  /* Верхний синий фон под системным статус-баром */
+  .cover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: max(env(safe-area-inset-top), 44px);
+    background-color: #4a90d9;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* Окно приложения: опущено ниже Dynamic Island/блюра, привязано к нижнему краю */
+  iframe {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    top: max(env(safe-area-inset-top), 48px);
+    height: calc(100% - max(env(safe-area-inset-top), 48px));
+    border: 0;
+    display: block;
+  }
 </style>
 </head>
 <body>
-<div class="cover" id="cover"></div>
+<div class="cover"></div>
 <iframe src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
-<script>
-function resetTint() {
-  var old = document.getElementById('cover');
-  if (old) old.remove();
-  setTimeout(function () {
-    var c = document.createElement('div');
-    c.className = 'cover';
-    c.id = 'cover';
-    document.body.insertBefore(c, document.body.firstChild);
-  }, 120);
-}
-window.addEventListener('load', function () {
-  setTimeout(resetTint, 300);
-  setTimeout(resetTint, 1500);
-  setTimeout(resetTint, 4000);
-});
-window.addEventListener('pageshow', function () { setTimeout(resetTint, 300); });
-document.addEventListener('visibilitychange', function () {
-  if (!document.hidden) setTimeout(resetTint, 300);
-});
-</script>
 </body>
 </html>
