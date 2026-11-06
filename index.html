@@ -11,31 +11,46 @@
 <meta name="apple-mobile-web-app-title" content="0 euro">
 <meta name="theme-color" content="#4a90d9">
 <style>
-  /* 100vh вместо 100% устраняет баг 59px щели на iOS PWA */
+  :root {
+    --safe-top: calc(max(env(safe-area-inset-top), 20px) + 8px);
+  }
+
   html, body {
     margin: 0;
     padding: 0;
     width: 100vw;
     height: 100vh;
     min-height: 100vh;
-    background-color: #f2f2f2;
+    background-color: #4a90d9;
     overflow: hidden;
     overscroll-behavior: none;
   }
 
-  /* Чистый фрейм на весь экран от края до края */
-  iframe {
+  /* Чистый синий козырёк под статус-баром — убирает градиент */
+  .cover {
     position: fixed;
     top: 0;
     left: 0;
+    right: 0;
+    height: var(--safe-top);
+    background-color: #4a90d9;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* Фрейм начинается ровно под козырьком и тянется до дна без нижней полосы */
+  iframe {
+    position: fixed;
+    top: var(--safe-top);
+    left: 0;
     width: 100vw;
-    height: 100vh;
+    height: calc(100vh - var(--safe-top));
     border: 0;
     display: block;
     background-color: #f2f2f2;
   }
 
-  /* Белый сплэш-скрин с иконкой при запуске */
+  /* Белый экран загрузки с иконкой */
   #splash {
     position: fixed;
     inset: 0;
@@ -60,6 +75,7 @@
 </style>
 </head>
 <body>
+<div class="cover"></div>
 <iframe id="app" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
 
 <div id="splash">
