@@ -83,7 +83,6 @@
   var cover = document.getElementById('cover');
   var splash = document.getElementById('splash');
   var innerWin = null;
-  var extra = 0;
   var ticking = false;
 
   function hideSplash() {
@@ -102,7 +101,7 @@
         y: Math.max(0, window.pageYOffset),
         vh: window.innerHeight,
         safeTop: cover.offsetHeight,
-        extra: extra
+        extra: 0
       }, '*');
     } catch (e) {}
   }
@@ -122,9 +121,8 @@
     innerWin = e.source;
 
     if (d.type === 'size') {
-      extra = Math.max(0, frame.offsetHeight - d.ih);
       var minH = window.innerHeight - cover.offsetHeight;
-      var newH = Math.max(Math.ceil(d.h + extra), minH);
+      var newH = Math.max(Math.ceil(d.h), minH);
       if (Math.abs(newH - frame.offsetHeight) > 1) frame.style.height = newH + 'px';
       hideSplash();
     } else if (d.type === 'lock') {
