@@ -12,6 +12,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="0 euro">
 <style>
+  :root {
+    --sat: env(safe-area-inset-top, 20px);
+  }
+
   * { box-sizing: border-box; }
 
   html, body {
@@ -21,6 +25,19 @@
     height: 100%;
     background-color: #4a90d9;
     overflow: hidden;
+  }
+
+  /* Фиксированный синий якорь: именно он красит статус-бар в синий и блокирует блюр */
+  .status-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--sat);
+    min-height: 20px;
+    background-color: #4a90d9;
+    z-index: 5;
+    pointer-events: none;
   }
 
   iframe {
@@ -42,7 +59,7 @@
     position: fixed;
     inset: 0;
     background-color: #ffffff;
-    z-index: 10;
+    z-index: 20;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -63,6 +80,7 @@
 </head>
 <body>
 
+<div class="status-bar"></div>
 <iframe id="app" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
 
 <div id="splash">
