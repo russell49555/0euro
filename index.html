@@ -21,13 +21,12 @@
     margin: 0;
     padding: 0;
     width: 100%;
-    height: 100%;
     background-color: #f2f2f2;
+  }
+  html.lock, html.lock body {
     overflow: hidden;
-    overscroll-behavior: none;
   }
 
-  /* Синяя плашка под статус-баром (Safari берёт из неё цвет сверху) */
   .cover {
     position: fixed;
     top: 0;
@@ -39,29 +38,12 @@
     pointer-events: none;
   }
 
-  /* Полоса у нижнего края: из неё Safari 26 берёт цвет нижней панели */
-  #tint {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 6px;
-    background-color: #f2f2f2;
-    z-index: 20;
-    pointer-events: none;
-  }
-
   iframe {
-    position: fixed;
-    top: var(--safe-top);
-    left: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: auto;
-    border: 0;
     display: block;
+    width: 100%;
+    margin-top: var(--safe-top);
+    height: calc(100vh - var(--safe-top));
+    border: 0;
     background-color: #f2f2f2;
   }
 
@@ -89,21 +71,66 @@
 </style>
 </head>
 <body>
-<div class="cover"></div>
-<iframe id="app" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
-<div id="tint"></div>
+<div class="cover" id="cover"></div>
+<iframe id="app" scrolling="no" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
 
 <div id="splash">
   <img src="https://russell49555.github.io/0euro/icon.png?v=2" alt="0 euro">
 </div>
 
 <script>
-  document.getElementById('app').addEventListener('load', function () {
-    var s = document.getElementById('splash');
-    s.style.opacity = '0';
-    setTimeout(function () {
-      s.style.display = 'none';
-    }, 300);
+  var frame = document.getElementById('app');
+  var cover = document.getElementById('cover');
+  var splash = document.getElementById('splash');
+  var innerWin = null;
+  var extra = 0;
+  var ticking = false;
+
+  function hideSplash() {
+    if (splash.style.display === 'none') return;
+    splash.style.opacity = '0';
+    setTimeout(function () { splash.style.display = 'none'; }, 300);
+  }
+  frame.addEventListener('load', hideSplash);
+
+  function sendView() {
+    if (!innerWin) return;
+    try {
+      innerWin.postMessage({
+        src: '0euro',
+        type: 'view',
+        y: Math.max(0, window.pageYOffset),
+        vh: window.innerHeight,
+        safeTop: cover.offsetHeight,
+        extra: extra
+      }, '*');
+    } catch (e) {}
+  }
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(function () { ticking = false; sendView(); });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+
+  window.addEventListener('message', function (e) {
+    if (String(e.origin).indexOf('googleusercontent.com') < 0) return;
+    var d = e.data;
+    if (!d || d.src !== '0euro') return;
+    innerWin = e.source;
+
+    if (d.type === 'size') {
+      extra = Math.max(0, frame.offsetHeight - d.ih);
+      var minH = window.innerHeight - cover.offsetHeight;
+      var newH = Math.max(Math.ceil(d.h + extra), minH);
+      if (Math.abs(newH - frame.offsetHeight) > 1) frame.style.height = newH + 'px';
+      hideSplash();
+    } else if (d.type === 'lock') {
+      document.documentElement.classList.toggle('lock', !!d.v);
+    }
+    sendView();
   });
 </script>
 </body>
