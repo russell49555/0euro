@@ -20,14 +20,14 @@
   html, body {
     margin: 0;
     padding: 0;
-    width: 100vw;
-    height: 100vh;
-    min-height: 100vh;
-    background-color: #4a90d9;
+    width: 100%;
+    height: 100%;
+    background-color: #f2f2f2;
     overflow: hidden;
     overscroll-behavior: none;
   }
 
+  /* Синяя плашка под статус-баром (Safari берёт из неё цвет сверху) */
   .cover {
     position: fixed;
     top: 0;
@@ -39,12 +39,27 @@
     pointer-events: none;
   }
 
+  /* Полоса у нижнего края: из неё Safari 26 берёт цвет нижней панели */
+  #tint {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 6px;
+    background-color: #f2f2f2;
+    z-index: 20;
+    pointer-events: none;
+  }
+
   iframe {
     position: fixed;
     top: var(--safe-top);
     left: 0;
-    width: 100vw;
-    height: calc(100vh - var(--safe-top));
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
     border: 0;
     display: block;
     background-color: #f2f2f2;
@@ -76,6 +91,7 @@
 <body>
 <div class="cover"></div>
 <iframe id="app" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
+<div id="tint"></div>
 
 <div id="splash">
   <img src="https://russell49555.github.io/0euro/icon.png?v=2" alt="0 euro">
