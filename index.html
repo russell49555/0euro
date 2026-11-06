@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>0 euro</title>
+<title>0 euro collection</title>
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -11,26 +11,15 @@
 <meta name="apple-mobile-web-app-title" content="0 euro">
 <meta name="theme-color" content="#4a90d9">
 <style>
-  :root { --top: max(env(safe-area-inset-top), 8px); --shift: 50px; }
-  html { margin: 0; height: 100%; background-color: #4a90d9; overscroll-behavior: none; }
-  body { margin: 0; height: 100%; position: relative; background-color: #4a90d9; overscroll-behavior: none; }
+  :root { --shift: 50px; }
 
-  .cover { position: fixed; top: 0; left: 0; right: 0; height: var(--top);
-    background-color: #4a90d9; z-index: 2; pointer-events: none; }
+.cover { position: fixed; top: 0; left: 0; right: 0;
+  height: max(env(safe-area-inset-top), 8px);
+  background-color: #4a90d9; z-index: 2; pointer-events: none; }
 
-  .remove-blur { position: fixed; inset: 0 0 auto; height: 11px; z-index: 3; pointer-events: none;
-    background: #4a90d9; -webkit-background-clip: text; background-clip: text; }
-
-  #ghost-cover { display: none; position: fixed; inset: 0; z-index: 9998;
-    background: rgba(255,255,255,0.01); pointer-events: none; animation: gfade 0.3s; }
-  #ghost-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 90%; z-index: 9999;
-    background: rgba(255,255,255,0.01); pointer-events: none;
-    transform: translateX(110%); transition: transform 0.3s; }
-  @keyframes gfade { from { opacity: 0; } to { opacity: 1; } }
-
-  iframe { position: absolute; left: 0; width: 100%; border: 0;
-    top: calc(var(--top) - var(--shift));
-    height: calc(100% - var(--top) + var(--shift)); }
+iframe { position: absolute; left: 0; width: 100%; border: 0;
+  top: calc(max(env(safe-area-inset-top), 8px) - var(--shift));
+  bottom: 0; }
 </style>
 </head>
 <body>
