@@ -17,8 +17,9 @@
     height: max(env(safe-area-inset-top), 8px);
     background-color: #4a90d9; z-index: 2; pointer-events: none; }
 
-  iframe { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; border: 0;
-    top: calc(max(env(safe-area-inset-top), 8px) - 50px); }
+  iframe { position: fixed; left: 0; width: 100%; border: 0;
+  top: calc(max(env(safe-area-inset-top), 8px) - 50px);
+  height: calc(100% - max(env(safe-area-inset-top), 8px) + 50px); }
 </style>
 </head>
 <body>
