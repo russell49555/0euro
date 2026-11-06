@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>0 euro collection</title>
+<title>0 euro</title>
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -11,44 +11,18 @@
 <meta name="apple-mobile-web-app-title" content="0 euro">
 <meta name="theme-color" content="#4a90d9">
 <style>
-:root { --shift: 50px; }
+  html, body { margin: 0; padding: 0; background-color: #4a90d9; overscroll-behavior: none; }
 
-.cover { position: fixed; top: 0; left: 0; right: 0;
-  height: max(env(safe-area-inset-top), 8px);
-  background-color: #4a90d9; z-index: 2; pointer-events: none; }
+  .cover { position: fixed; top: 0; left: 0; right: 0;
+    height: max(env(safe-area-inset-top), 8px);
+    background-color: #4a90d9; z-index: 2; pointer-events: none; }
 
-iframe { position: absolute; left: 0; width: 100%; border: 0;
-  top: calc(max(env(safe-area-inset-top), 8px) - var(--shift));
-  bottom: 0; }
+  iframe { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; border: 0;
+    top: calc(max(env(safe-area-inset-top), 8px) - 50px); }
 </style>
 </head>
 <body>
 <div class="cover"></div>
-<div class="remove-blur" aria-hidden="true"></div>
-<div id="ghost-cover"></div>
-<div id="ghost-panel"></div>
-
 <iframe src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
-
-<script>
-function ghost() {
-  var c = document.getElementById('ghost-cover');
-  var p = document.getElementById('ghost-panel');
-  void p.offsetWidth;
-  requestAnimationFrame(function () {
-    c.style.display = 'block';
-    p.style.transform = 'translateX(0%)';
-    setTimeout(function () {
-      c.style.display = 'none';
-      p.style.transform = 'translateX(110%)';
-    }, 500);
-  });
-}
-window.addEventListener('load', function () { setTimeout(ghost, 300); });
-window.addEventListener('pageshow', function () { setTimeout(ghost, 300); });
-document.addEventListener('visibilitychange', function () {
-  if (!document.hidden) setTimeout(ghost, 300);
-});
-</script>
 </body>
 </html>
