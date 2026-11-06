@@ -9,51 +9,33 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="0 euro">
+<meta name="theme-color" content="#4a90d9">
 <style>
-  :root {
-    --top: calc(max(env(safe-area-inset-top), 20px) + 16px);
-  }
-
+  /* 100vh вместо 100% устраняет баг 59px щели на iOS PWA */
   html, body {
     margin: 0;
     padding: 0;
-    width: 100%;
-    height: 100%;
-    background-color: #ffffff;
+    width: 100vw;
+    height: 100vh;
+    min-height: 100vh;
+    background-color: #f2f2f2;
     overflow: hidden;
     overscroll-behavior: none;
   }
 
-  /* Верхний синий козырёк, закрывающий область статус-бара */
-  .cover {
+  /* Чистый фрейм на весь экран от края до края */
+  iframe {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    height: var(--top);
-    background-color: #4a90d9;
-    z-index: 2;
-    pointer-events: none;
-    display: none;
-  }
-  html.ready .cover {
-    display: block;
-  }
-
-  /* Фрейм на весь экран: начинается под блюром, перекрывает низ с запасом под Home-полоску */
-  iframe {
-    position: fixed;
-    top: var(--top);
-    left: 0;
-    width: 100%;
-    height: calc(100dvh - var(--top) + env(safe-area-inset-bottom, 20px));
-    height: calc(100% - var(--top) + 40px);
+    width: 100vw;
+    height: 100vh;
     border: 0;
     display: block;
     background-color: #f2f2f2;
   }
 
-  /* Белый экран загрузки с иконкой */
+  /* Белый сплэш-скрин с иконкой при запуске */
   #splash {
     position: fixed;
     inset: 0;
@@ -69,16 +51,15 @@
     height: 110px;
     border-radius: 24px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    animation: splash-pulse 1.4s ease-in-out infinite;
+    animation: pulse 1.4s ease-in-out infinite;
   }
-  @keyframes splash-pulse {
+  @keyframes pulse {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(0.95); opacity: 0.85; }
   }
 </style>
 </head>
 <body>
-<div class="cover"></div>
 <iframe id="app" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
 
 <div id="splash">
@@ -87,7 +68,6 @@
 
 <script>
   document.getElementById('app').addEventListener('load', function () {
-    document.documentElement.classList.add('ready');
     var s = document.getElementById('splash');
     s.style.opacity = '0';
     setTimeout(function () {
