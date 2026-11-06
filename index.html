@@ -14,44 +14,83 @@
 <meta name="theme-color" content="#4a90d9">
 <style>
   :root {
-    --safe-top: calc(max(env(safe-area-inset-top), 20px) + 8px);
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  * { box-sizing: border-box; }
 
   html, body {
     margin: 0;
     padding: 0;
     width: 100%;
     background-color: #f2f2f2;
+    font-family: Roboto, Arial, sans-serif;
   }
   html.lock, html.lock body {
     overflow: hidden;
   }
 
-  .cover {
+  header {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: var(--safe-top);
-    background-color: #4a90d9;
-    z-index: 2;
-    pointer-events: none;
+    z-index: 100;
+    background: #4a90d9;
+    color: #fff;
+    padding: calc(var(--safe-top) + 6px) 12px 8px;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .filters {
+    display: flex;
+    gap: 8px;
+  }
+  .filters input, .filters select {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 0 8px;
+    border: 0;
+    border-radius: 6px;
+    font-size: 15px;
+    background: #fff;
+    color: #222;
   }
 
   iframe {
     display: block;
     width: 100%;
-    margin-top: var(--safe-top);
-    height: calc(100vh - var(--safe-top));
     border: 0;
     background-color: #f2f2f2;
+    /* margin-top выставляется скриптом точно под высоту header */
   }
+
+  .fab {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 16px);
+    z-index: 90;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 0;
+    background: #4a90d9;
+    color: #fff;
+    box-shadow: 0 2px 6px rgba(0,0,0,.4);
+  }
+  #refresh { right: 16px; font-size: 22px; }
+  #add { right: 76px; font-size: 30px; display: none; }
 
   #splash {
     position: fixed;
     inset: 0;
     background-color: #ffffff;
-    z-index: 10;
+    z-index: 200;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -71,8 +110,19 @@
 </style>
 </head>
 <body>
-<div class="cover" id="cover"></div>
+
+<header id="hdr">
+  <h1>0 euro collection</h1>
+  <div class="filters">
+    <input id="q" type="search" placeholder="Поиск">
+    <select id="country"><option value="">Все страны</option></select>
+  </div>
+</header>
+
 <iframe id="app" scrolling="no" src="https://script.google.com/macros/s/AKfycbwI7z-0g9vpvSmqrr7uPqdU06VcRTd77zc1HpAykWgFSZYiho-EfU4HWoCDeax8uGs/exec"></iframe>
+
+<button id="refresh" class="fab">↻</button>
+<button id="add" class="fab">+</button>
 
 <div id="splash">
   <img src="https://russell49555.github.io/0euro/icon.png?v=2" alt="0 euro">
@@ -80,10 +130,19 @@
 
 <script>
   var frame = document.getElementById('app');
-  var cover = document.getElementById('cover');
+  var hdr = document.getElementById('hdr');
   var splash = document.getElementById('splash');
+  var qInput = document.getElementById('q');
+  var cSelect = document.getElementById('country');
+  var btnRefresh = document.getElementById('refresh');
+  var btnAdd = document.getElementById('add');
   var innerWin = null;
-  var ticking = false;
+
+  function setHeaderMargin() {
+    frame.style.marginTop = hdr.offsetHeight + 'px';
+  }
+  setHeaderMargin();
+  window.addEventListener('resize', setHeaderMargin);
 
   function hideSplash() {
     if (splash.style.display === 'none') return;
@@ -92,27 +151,29 @@
   }
   frame.addEventListener('load', hideSplash);
 
-  function sendView() {
+  function postToFrame(msg) {
+    if (!innerWin) {
+      try { innerWin = frame.contentWindow; } catch (e) {}
+    }
     if (!innerWin) return;
-    try {
-      innerWin.postMessage({
-        src: '0euro',
-        type: 'view',
-        y: Math.max(0, window.pageYOffset),
-        vh: window.innerHeight,
-        safeTop: cover.offsetHeight,
-        extra: 0
-      }, '*');
-    } catch (e) {}
+    msg.src = '0euro_parent';
+    try { innerWin.postMessage(msg, '*'); } catch (e) {}
   }
 
-  function onScroll() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(function () { ticking = false; sendView(); });
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
+  qInput.addEventListener('input', function () {
+    postToFrame({ type: 'filter', q: qInput.value, country: cSelect.value });
+  });
+  cSelect.addEventListener('change', function () {
+    postToFrame({ type: 'filter', q: qInput.value, country: cSelect.value });
+  });
+
+  btnRefresh.addEventListener('click', function () {
+    btnRefresh.disabled = true;
+    postToFrame({ type: 'refresh' });
+  });
+  btnAdd.addEventListener('click', function () {
+    postToFrame({ type: 'add' });
+  });
 
   window.addEventListener('message', function (e) {
     if (String(e.origin).indexOf('googleusercontent.com') < 0) return;
@@ -121,14 +182,28 @@
     innerWin = e.source;
 
     if (d.type === 'size') {
-      var minH = window.innerHeight - cover.offsetHeight;
+      var minH = window.innerHeight - hdr.offsetHeight;
       var newH = Math.max(Math.ceil(d.h), minH);
-      if (Math.abs(newH - frame.offsetHeight) > 1) frame.style.height = newH + 'px';
+      if (Math.abs(newH - frame.offsetHeight) > 2) {
+        frame.style.height = newH + 'px';
+      }
       hideSplash();
+    } else if (d.type === 'countries') {
+      var cur = cSelect.value;
+      cSelect.innerHTML = '<option value="">Все страны</option>';
+      (d.list || []).forEach(function (c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c;
+        cSelect.appendChild(opt);
+      });
+      cSelect.value = cur;
+    } else if (d.type === 'admin') {
+      if (d.v) btnAdd.style.display = 'block';
+    } else if (d.type === 'refreshed') {
+      btnRefresh.disabled = false;
     } else if (d.type === 'lock') {
       document.documentElement.classList.toggle('lock', !!d.v);
     }
-    sendView();
   });
 </script>
 </body>
