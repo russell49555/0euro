@@ -14,6 +14,16 @@
   body { margin: 0; height: 100%; position: relative; background-color: #4a90d9; overscroll-behavior: none; }
   .cover { position: fixed; top: 0; left: 0; right: 0; height: var(--top); background-color: #4a90d9; z-index: 2; }
   iframe { position: absolute; top: var(--top); left: 0; width: 100%; height: calc(100% - var(--top)); border: 0; }
+/* Временная диагностика: фон обёртки */
+html, body {
+  background: #ff00ff !important;
+}
+
+/* Временная диагностика: граница внешнего iframe */
+iframe {
+  outline: 3px solid #00ff00 !important;
+  outline-offset: -3px;
+}
 </style>
 </head>
 <body>
